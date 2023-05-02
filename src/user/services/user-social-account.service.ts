@@ -89,37 +89,41 @@ export class UserSocialAccountService {
         if (input.emailManualInput) {
             // verified Email with otp.
             await this.verifySocialRegisterWithExistingEmail({ email: input.email, verificationCode: input.verificationCode });
-            const userHasOldProvider = await this.socialAccountRepo.findOne({ where: { userId: existingUser.id } });
-            if (!userHasOldProvider) {
-                // ask to merge with provider
-                throw new BaseHttpException(ErrorCodeEnum.ACCOUNT_EXISTS_ASK_TO_MERGE);
-            }
+            const userHasOldProvider = await this.socialAccountRepo.findAll({ where: { userId: existingUser.id } });
             if (userHasOldProvider) {
                 // check provider type
-                if (userHasOldProvider.provider === input.provider)
+                const userHasOldProviderWithSameType = await this.socialAccountRepo.findOne({ where: { userId: existingUser.id, provider: input.provider } });
+                if (userHasOldProviderWithSameType) {
                     // ask to replace old provider with new One
+                    console.log('ask to replace old provider with new One');
                     throw new BaseHttpException(ErrorCodeEnum.ACCOUNT_EXISTS_WITH_DIFFERENT_PROVIDER_ID_ASK_TO_REPLACE);
-                else {
+                } else {
                     // ask user to merge with old account
-                    throw new BaseHttpException(ErrorCodeEnum.ACCOUNT_EXISTS_ASK_TO_MERGE);
+                    await this.socialAccountRepo.create(
+                        { providerId: input.providerId, provider: input.provider, userId: existingUser.id }
+                    );
+                    return await this.userService.appendAuthTokenToUser(existingUser);
                 }
+            } else if (!userHasOldProvider.length) {
+                // ask to merge with provider
+                await this.socialAccountRepo.create({ providerId: input.providerId, provider: input.provider, userId: existingUser.id });
+                return await this.userService.appendAuthTokenToUser(existingUser);
             }
         } else {
-            const userHasOldProvider = await this.socialAccountRepo.findOne({ where: { userId: existingUser.id } });
+            const userHasOldProvider = await this.socialAccountRepo.findAll({ where: { userId: existingUser.id } });
             if (userHasOldProvider) {
+                const userHasOldProviderWithSameType = await this.socialAccountRepo.findOne({ where: { userId: existingUser.id, provider: input.provider } });
                 // check provider type
-                if (userHasOldProvider.provider === input.provider)
+                if (userHasOldProviderWithSameType) {
                     // ask to replace old provider with new One
                     throw new BaseHttpException(ErrorCodeEnum.ACCOUNT_EXISTS_WITH_DIFFERENT_PROVIDER_ID_ASK_TO_REPLACE);
-                else {
+                } else {
                     // ask user to merge with old account
                     throw new BaseHttpException(ErrorCodeEnum.ACCOUNT_EXISTS_ASK_TO_MERGE);
                 }
-            } if (!userHasOldProvider) {
-                // create provider to existing user account // OR // Ask to merge with old account
-                await this.socialAccountRepo.create(
-                    { providerId: input.providerId, provider: input.provider, userId: existingUser.id }
-                );
+            } else if (!userHasOldProvider.length) {
+                // create provider to existing user account
+                await this.socialAccountRepo.create({ providerId: input.providerId, provider: input.provider, userId: existingUser.id });
                 return await this.userService.appendAuthTokenToUser(existingUser);
             }
         }
