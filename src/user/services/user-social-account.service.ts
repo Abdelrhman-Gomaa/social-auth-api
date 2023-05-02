@@ -29,9 +29,9 @@ export class UserSocialAccountService {
                 provider: input.provider
             }
         }),
-            userBySocialAccount =
+            userBySocialAccount = // user with provider already Exited
                 socialAccount && (await this.userRepo.findOne({ where: { id: socialAccount.userId } })),
-            userByEmail =
+            userByEmail = // user with same email input exists
                 input.email && (await this.userRepo.findOne({ where: { verifiedEmail: input.email.toLowerCase() } }));
 
         if (userBySocialAccount && userBySocialAccount.isBlocked)
@@ -39,16 +39,17 @@ export class UserSocialAccountService {
 
         const socialState = this.getSocialState(userBySocialAccount, userByEmail);
         switch (socialState) {
-            case 'SOCIAL__HAS_NOT_EMAIL':
-                throw new BaseHttpException(ErrorCodeEnum.ACCOUNT_EXISTS);
-
+            // If email is already exists and provider doesn't 
             case 'NO_SOCIAL__HAS_EMAIL':
                 return await this.isEmailExistingAndProviderNotExist(input);
 
+            // If provider id already existed in database
             case 'SOCIAL__NO_EMAIL':
             case 'SOCIAL__HAS_EMAIL':
+            case 'SOCIAL__HAS_NOT_EMAIL':
                 return await this.loginBySocialAccount(userBySocialAccount, input);
 
+            // Only straight case to register with social account directly
             case 'NO_SOCIAL__NO_EMAIL': {
                 if (input.provider === SocialProvidersEnum.APPLE && input.device !== DeviceEnum.IOS)
                     throw new BaseHttpException(ErrorCodeEnum.INVALID_PLATFORM);
@@ -61,15 +62,15 @@ export class UserSocialAccountService {
 
     private getSocialState(userBySocialAccount?: User, userByEmail?: User): string {
         const states = {
-            SOCIAL__HAS_EMAIL: Number(
+            SOCIAL__HAS_EMAIL: Number( // if user with same provider and email existed
                 !!userBySocialAccount && !!userByEmail && userByEmail.id === userBySocialAccount.id
             ),
-            SOCIAL__HAS_NOT_EMAIL: Number(
+            SOCIAL__HAS_NOT_EMAIL: Number( // if found users one user with same provider entered and other with same email entered
                 !!userBySocialAccount && !!userByEmail && userByEmail.id !== userBySocialAccount.id
             ),
-            SOCIAL__NO_EMAIL: Number(!!userBySocialAccount && !userByEmail),
-            NO_SOCIAL__NO_EMAIL: Number(!userBySocialAccount && !userByEmail),
-            NO_SOCIAL__HAS_EMAIL: Number(!userBySocialAccount && !!userByEmail)
+            SOCIAL__NO_EMAIL: Number(!!userBySocialAccount && !userByEmail), // if found user with same provider and different email
+            NO_SOCIAL__NO_EMAIL: Number(!userBySocialAccount && !userByEmail), // not found user with  provider or email
+            NO_SOCIAL__HAS_EMAIL: Number(!userBySocialAccount && !!userByEmail) // found user with email only
         };
         let state: string;
         for (const s in states) {
