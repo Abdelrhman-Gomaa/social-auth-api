@@ -1,11 +1,12 @@
+import { Field, InputType } from '@nestjs/graphql';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, Matches, MaxLength, MinLength } from "class-validator";
 
-
+@InputType()
 export class LoginUserInput {
     
     @IsString()
-    @ApiProperty()
+    @Field()
     readonly email: string;
 
     @IsString()
@@ -15,7 +16,7 @@ export class LoginUserInput {
         /((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/,
         { message: 'Password too week'}
     ) //uppercase , lowercase , number or spezial character
-    @ApiProperty()
+    @Field()
     readonly password: string;
 
 }
