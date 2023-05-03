@@ -64,11 +64,9 @@ export class UserSocialAccountService {
             case 'SOCIAL__HAS_NOT_EMAIL':
                 return await this.loginBySocialAccount(userBySocialAccount, input);
 
-            // Only straight case to register with social account directly
+            // Only straight case to register with social account directly or sign as a unverified user if mail manually entered
             case 'NO_SOCIAL__NO_EMAIL': {
-                if (input.provider === SocialProvidersEnum.APPLE && input.device !== DeviceEnum.IOS)
-                    throw new BaseHttpException(ErrorCodeEnum.INVALID_PLATFORM);
-                return await this.registerBySocialAccount(input);
+                return await this.isEmailAndProviderNotExist(input);
             }
             default:
                 throw new BaseHttpException(ErrorCodeEnum.UNKNOWN_ERROR);
@@ -151,6 +149,18 @@ export class UserSocialAccountService {
         return existingUser;
     }
 
+    private async isEmailAndProviderNotExist(input: RegisterOrLoginBySocialAccountInput) {
+        if (!input.emailManualInput) {
+            if (input.provider === SocialProvidersEnum.APPLE && input.device !== DeviceEnum.IOS)
+                throw new BaseHttpException(ErrorCodeEnum.INVALID_PLATFORM);
+            return await this.registerBySocialAccount(input);
+        } else {
+            const user = await this.createUnVerifiedUser(input);
+            await this.sendVerificationSocialAccount({ userId: user.id, email: input.email });
+            return user;
+        }
+    }
+
     private async createUserAndSocialAccount(
         input: RegisterOrLoginBySocialAccountInput
     ): Promise<User> {
@@ -166,6 +176,19 @@ export class UserSocialAccountService {
             { providerId: input.providerId, provider: input.provider, userId: user.id }
         );
         return user;
+    }
+
+    private async createUnVerifiedUser(
+        input: RegisterOrLoginBySocialAccountInput
+    ): Promise<User> {
+        if (input.email) await this.userService.deleteDuplicatedUsersAtUnVerifiedEmail(input.email);
+        return await this.userRepo.create({
+            ...input,
+            ...(input.email && { unVerifiedEmail: input.email }),
+            lastLoginDetails: this.lastLoginDetailsTransformer({
+                device: input.device
+            })
+        });
     }
 
     private async loginBySocialAccount(
