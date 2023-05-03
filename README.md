@@ -25,6 +25,11 @@
 ## Description
 
 Social Authentication, allow users to Register and Login to app with social account like Google & Facebook & Twitter & Apple.
+Send Code Verification with Email to Verifying Account Email By Using Node Mailer and bull queue with Redis.
+
+## Tools
+
+NestJS, Sequelize, PostgreSQL, Redis, GraphQl
 
 ## Installation
 
