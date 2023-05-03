@@ -4,6 +4,7 @@ import { UsersProvider } from './providers/users.provider';
 import { UserResolver } from './user.resolver';
 import { UserSocialAccountService } from './services/user-social-account.service';
 import { UserSocialAccountsProvider } from './providers/user-social-accounts.provider';
+import { UserVerificationCodesProvider } from './providers/user-verification-code.provider';
 
 @Module({
   providers: [
@@ -11,13 +12,15 @@ import { UserSocialAccountsProvider } from './providers/user-social-accounts.pro
     UserSocialAccountService,
     UserResolver,
     ...UsersProvider,
-    ...UserSocialAccountsProvider
+    ...UserSocialAccountsProvider,
+    ...UserVerificationCodesProvider
   ],
   exports: [
     UserService,
     UserSocialAccountService,
     ...UsersProvider,
-    ...UserSocialAccountsProvider
+    ...UserSocialAccountsProvider,
+    ...UserVerificationCodesProvider
   ]
 })
 export class UserModule { }

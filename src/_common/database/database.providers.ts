@@ -1,5 +1,6 @@
 import { Sequelize } from "sequelize-typescript";
 import { UserSocialAccount } from 'src/user/models/user-social-account.model';
+import { UserVerificationCode } from 'src/user/models/user-verification-code.model';
 import { User } from 'src/user/models/user.model';
 
 export const databaseProviders = [
@@ -17,7 +18,7 @@ export const databaseProviders = [
           timestamps: false
         },
       });
-      sequelize.addModels([User, UserSocialAccount]);
+      sequelize.addModels([User, UserSocialAccount, UserVerificationCode]);
 
       sequelize.authenticate()
         .then(() => {
