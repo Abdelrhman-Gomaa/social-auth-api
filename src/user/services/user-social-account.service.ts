@@ -52,17 +52,15 @@ export class UserSocialAccountService {
         if (userBySocialAccount && userBySocialAccount.isBlocked)
             throw new BaseHttpException(ErrorCodeEnum.BLOCKED_USER);
 
+        if (userBySocialAccount) {
+            return await this.loginBySocialAccount(userBySocialAccount, input);
+        }
+
         const socialState = this.getSocialState(userBySocialAccount, userByEmail);
         switch (socialState) {
             // If email is already exists and provider doesn't 
             case 'NO_SOCIAL__HAS_EMAIL':
                 return await this.isEmailExistingAndProviderNotExist(input);
-
-            // If provider id already existed in database
-            case 'SOCIAL__NO_EMAIL':
-            case 'SOCIAL__HAS_EMAIL':
-            case 'SOCIAL__HAS_NOT_EMAIL':
-                return await this.loginBySocialAccount(userBySocialAccount, input);
 
             // Only straight case to register with social account directly or sign as a unverified user if mail manually entered
             case 'NO_SOCIAL__NO_EMAIL': {
@@ -81,13 +79,6 @@ export class UserSocialAccountService {
 
     private getSocialState(userBySocialAccount?: User, userByEmail?: User): string {
         const states = {
-            SOCIAL__HAS_EMAIL: Number( // if user with same provider and email existed
-                !!userBySocialAccount && !!userByEmail && userByEmail.id === userBySocialAccount.id
-            ),
-            SOCIAL__HAS_NOT_EMAIL: Number( // if found users one user with same provider entered and other with same email entered
-                !!userBySocialAccount && !!userByEmail && userByEmail.id !== userBySocialAccount.id
-            ),
-            SOCIAL__NO_EMAIL: Number(!!userBySocialAccount && !userByEmail), // if found user with same provider and different email
             NO_SOCIAL__NO_EMAIL: Number(!userBySocialAccount && !userByEmail), // not found user with  provider or email
             NO_SOCIAL__HAS_EMAIL: Number(!userBySocialAccount && !!userByEmail) // found user with email only
         };
