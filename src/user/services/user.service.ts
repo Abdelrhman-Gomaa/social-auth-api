@@ -1,7 +1,7 @@
 import * as jwt from 'jsonwebtoken';
-import { ConflictException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { Op, where } from 'sequelize';
+import { Op } from 'sequelize';
 import { CreateUserInput } from '../input/create.user.input';
 import { LoginUserInput } from '../input/login.user.input';
 import { User } from '../models/user.model';
@@ -11,7 +11,7 @@ import { BaseHttpException } from 'src/_common/exceptions/base-http-exception';
 import { ErrorCodeEnum } from 'src/_common/exceptions/error-code.enum';
 import { ChangePasswordInput } from '../input/change.password.input';
 import { UserByEmailBasedOnUseCaseOrErrorInput } from '../user.interface';
-import { UserVerificationCodeUseCaseEnum } from '../user.enum';
+import {  UserVerificationCodeUseCaseEnum } from '../user.enum';
 import { generate } from 'voucher-code-generator';
 import * as slug from 'speakingurl';
 
@@ -111,6 +111,18 @@ export class UserService {
             : await this.userByVerifiedEmailOrError(input.email);
     }
 
+    async userByNotVerifiedEmailOrError(email: string) {
+        const user = await this.userRepo.findOne({ where: { unVerifiedEmail: email } });
+        if (!user) throw new BaseHttpException(ErrorCodeEnum.USER_DOES_NOT_EXIST);
+        return user;
+    }
+
+    async userByVerifiedEmailOrError(email: string) {
+        const user = await this.userRepo.findOne({ where: { verifiedEmail: email } });
+        if (!user) throw new BaseHttpException(ErrorCodeEnum.USER_DOES_NOT_EXIST);
+        return user;
+    }
+
     private async validationUserPassword(input: LoginUserInput) {
         const user = await this.userRepo.findOne({ where: { email: input.email } });
         if (user) {
@@ -133,18 +145,6 @@ export class UserService {
 
     private generateAuthToken(id: string): string {
         return jwt.sign({ userId: id }, process.env.JWT_SECRET);
-    }
-
-    private async userByNotVerifiedEmailOrError(email: string) {
-        const user = await this.userRepo.findOne({ where: { unVerifiedEmail: email } });
-        if (!user) throw new BaseHttpException(ErrorCodeEnum.USER_DOES_NOT_EXIST);
-        return user;
-    }
-
-    private async userByVerifiedEmailOrError(email: string) {
-        const user = await this.userRepo.findOne({ where: { verifiedEmail: email } });
-        if (!user) throw new BaseHttpException(ErrorCodeEnum.USER_DOES_NOT_EXIST);
-        return user;
     }
 
     private slugify(value: string): string {

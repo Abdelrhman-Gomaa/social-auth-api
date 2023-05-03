@@ -1,7 +1,8 @@
-import { Default, Column, DataType, Model, PrimaryKey, Table, Unique, CreatedAt, UpdatedAt, AllowNull } from "sequelize-typescript";
+import { Default, Column, DataType, Model, PrimaryKey, Table, Unique, CreatedAt, UpdatedAt, AllowNull, HasMany } from "sequelize-typescript";
 import { ID, Field, ObjectType } from '@nestjs/graphql';
 import { GenderEnum, LangEnum } from '../user.enum';
 import { LastLoginDetailsType, LocationType } from '../user.type';
+import { UserVerificationCode } from './user-verification-code.model';
 
 @Table
 @ObjectType()
@@ -115,6 +116,9 @@ export class User extends Model {
     @Column({ type: DataType.JSONB })
     @Field(() => LastLoginDetailsType, { nullable: true })
     lastLoginDetails: LastLoginDetailsType;
+
+    @HasMany(() => UserVerificationCode)
+    userVerificationCodes?: UserVerificationCode[];
 
     @CreatedAt
     @Column({ type: DataType.DATE })
