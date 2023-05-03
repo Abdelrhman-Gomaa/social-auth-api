@@ -5,11 +5,13 @@ import { BaseHttpException } from 'src/_common/exceptions/base-http-exception';
 import { ErrorCodeEnum } from 'src/_common/exceptions/error-code.enum';
 import { RegisterOrLoginBySocialAccountInput } from '../input/social-account.input';
 import { UserSocialAccount } from '../models/user-social-account.model';
-import { DeviceEnum, SocialProvidersEnum, UserVerificationCodeUseCaseEnum } from '../user.enum';
+import { DeviceEnum, LangEnum, SocialProvidersEnum, UserVerificationCodeUseCaseEnum } from '../user.enum';
 import { UserService } from './user.service';
 import { LastLoginDetailsType } from '../user.type';
 import { LastLoginDetailsTransformerInput, UserByEmailBasedOnUseCaseOrErrorInput } from '../user.interface';
 import { VerifyUserByEmailInput } from '../input/verify-user-by-email.input';
+import { UserVerificationCodeService } from './user-verification-code.service';
+import { SendSocialAccountVerificationCodeInput } from '../input/send-social-account-code';
 
 @Injectable()
 export class UserSocialAccountService {
@@ -19,7 +21,20 @@ export class UserSocialAccountService {
         @Inject(Repositories.UserSocialAccountsRepository)
         private readonly socialAccountRepo: typeof UserSocialAccount,
         private readonly userService: UserService,
+        private readonly userVerificationCodeService: UserVerificationCodeService,
     ) { }
+
+    async sendVerificationSocialAccount(input: SendSocialAccountVerificationCodeInput) {
+        return await this.userVerificationCodeService.sendEmailVerificationCode(
+            input.userId,
+            {
+                favLang: LangEnum.EN,
+                email: input.email,
+                useCase: UserVerificationCodeUseCaseEnum.SOCIAL_REGISTER
+            },
+            'Social Account Verification'
+        );
+    }
 
     public async socialLoginOrRegister(input: RegisterOrLoginBySocialAccountInput): Promise<User> {
         // check if user provider already exist and login directly ....

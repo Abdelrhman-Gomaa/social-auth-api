@@ -49,6 +49,7 @@ export class UserVerificationCodeService {
     }, {
       delay: 1000
     });
+    return true
   }
 
   public async userByEmailBasedOnUseCaseOrError(

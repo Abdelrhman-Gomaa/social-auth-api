@@ -7,6 +7,7 @@ import { LangEnum } from './user.enum';
 import { CurrentUser } from 'src/auth/auth-user.decorator';
 import { CreateUserInput } from './input/create.user.input';
 import { LoginUserInput } from './input/login.user.input';
+import { SendSocialAccountVerificationCodeInput } from './input/send-social-account-code';
 
 @Resolver('Auth')
 export class UserResolver {
@@ -41,4 +42,10 @@ export class UserResolver {
     input.favLang = LangEnum.EN;
     return await this.userSocialAccountService.socialLoginOrRegister(input);
   }
+
+  @Mutation(() => Boolean)
+  async sendVerificationSocialAccount(@Args('input') input: SendSocialAccountVerificationCodeInput) {
+    return await this.userSocialAccountService.sendVerificationSocialAccount(input);
+  }
+
 }
