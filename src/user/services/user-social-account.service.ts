@@ -24,7 +24,7 @@ export class UserSocialAccountService {
         private readonly userVerificationCodeService: UserVerificationCodeService,
     ) { }
 
-    async sendVerificationSocialAccount(input: SendSocialAccountVerificationCodeInput) {
+    public async sendVerificationSocialAccount(input: SendSocialAccountVerificationCodeInput) {
         return await this.userVerificationCodeService.sendEmailVerificationCode(
             input.userId,
             {
@@ -73,6 +73,12 @@ export class UserSocialAccountService {
             default:
                 throw new BaseHttpException(ErrorCodeEnum.UNKNOWN_ERROR);
         }
+    }
+
+    public async replaceProvider(input: RegisterOrLoginBySocialAccountInput) {
+        const existingUser = await this.userRepo.findOne({ where: { verifiedEmail: input.email } });
+        await this.socialAccountRepo.update({ providerId: input.providerId }, { where: { provider: input.provider, userId: existingUser.id } });
+        return this.userService.appendAuthTokenToUser(existingUser);
     }
 
     private getSocialState(userBySocialAccount?: User, userByEmail?: User): string {

@@ -48,4 +48,10 @@ export class UserResolver {
     return await this.userSocialAccountService.sendVerificationSocialAccount(input);
   }
 
+  @Mutation(() => User)
+  async replaceProvider(@Args('input') input: RegisterOrLoginBySocialAccountInput) {
+    input.favLang = LangEnum.EN;
+    return await this.userSocialAccountService.replaceProvider(input);
+  }
+
 }
